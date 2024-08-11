@@ -1,0 +1,456 @@
+openapi: 3.0.3
+info:
+  title: GestureAPI
+  description: API to upload gesture data in .json format and analyse them to predict the type of gesture.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+tags:
+  - name: gesture
+    description: gesture operations
+  - name: analysis
+    description: Analysed gesture data
+paths:
+  /api/gestures/{gestureId}:
+    put:
+      tags:
+        - gesture
+      summary: Update existing gesture data
+      description: Update existing gesture data by Id
+      operationId: updateGesture
+      parameters:
+        - name: gestureId
+          in: path
+          description: ID of the gesture that should be updated
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        description: Update existing gesture data in the database
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Gesture'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GestureResponse'          
+        '500':
+          description: Invalid ID supplied
+        '404':
+          description: Gesture not found
+    get:
+      tags:
+        - gesture
+      summary: Get gesture data with that ID
+      description: Display the gesture data of a single gesture
+      operationId: getGesture
+      parameters:
+        - name: gestureId
+          in: path
+          description: ID of gesture that needs to be fetched
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GestureResponse'          
+        '500':
+          description: Invalid ID supplied
+        '404':
+          description: Gesture not found
+    delete:
+      tags:
+        - gesture
+      summary: Delete gesture data entry
+      description: delete gesture data
+      operationId: deleteGesture
+      parameters:
+        - name: gestureId
+          in: path
+          description: Gesture id to delete
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+            description: successful operation
+  /api/gestures:
+    post:
+      tags:
+        - gesture
+      summary: Add new gesture to the database
+      description: Add a new gesture
+      operationId: addGesture
+      requestBody:
+        description: Create a gesture in the database
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Gesture'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GestureResponse'          
+        '500':
+          description: Invalid input
+    get:
+      tags:
+        - gesture
+      summary: Get list of all gestures
+      description: Get list of all gestures in the database
+      operationId: getAllGestures
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GestureResponse'          
+        '500':
+          description: Invalid status value
+  /api/analysis/{analysisId}:
+    get:
+      tags:
+        - analysis
+      summary: Get analysis data with that ID
+      description: Display the gesture data of a single analysis
+      operationId: getAnalysis
+      parameters:
+        - name: analysisId
+          in: path
+          description: ID of analysis that needs to be fetched
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResponse'          
+        '500':
+          description: Invalid ID supplied
+        '404':
+          description: Analysis not found
+    delete:
+      tags:
+        - analysis
+      summary: Delete analysis data entry
+      description: delete analysis data
+      operationId: deleteAnalysis
+      parameters:
+        - name: analysisId
+          in: path
+          description: Analysis id to delete
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+            description: successful operation
+  /api/analysis:
+    post:
+      tags:
+        - analysis
+      summary: Add new analysis to the database
+      description: Add a new analysis
+      operationId: addAnalysis
+      requestBody:
+        description: Create a new analysis in the database
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Analysis'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResponse'          
+        '500':
+          description: Invalid input
+    get:
+      tags:
+        - analysis
+      summary: Get list of all analyses
+      description: Get list of all analyses in the database
+      operationId: getAllAnalyses
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnalysisResponse'          
+        '500':
+          description: Invalid status value
+components:
+  schemas:
+    Gesture:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "swipe"
+        startTime:
+          type: string
+          format: date-time
+          example: "2024-08-09T16:59:01.004Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2024-08-09T16:59:01.004Z"
+        positions:
+          type: object
+          properties:
+            position0:
+              type: object
+              properties:
+                xCoordinate:
+                  type: integer
+                  example: 2
+                yCoordinate:
+                  type: integer
+                  example: 0
+                zCoordinate:
+                  type: integer
+                  example: 1
+            position1:
+              type: object
+              properties:
+                xCoordinate:
+                  type: integer
+                  example: 3
+                yCoordinate:
+                  type: integer
+                  example: 2
+                zCoordinate:
+                  type: integer
+                  example: 5
+            position2:
+              type: object
+              properties:
+                xCoordinate:
+                  type: integer
+                  example: 4
+                yCoordinate:
+                  type: integer
+                  example: 3
+                zCoordinate:
+                  type: integer
+                  example: 4
+            position3:
+              type: object
+              properties:
+                xCoordinate:
+                  type: integer
+                  example: 5
+                yCoordinate:
+                  type: integer
+                  example: 2
+                zCoordinate:
+                  type: integer
+                  example: 0
+    GestureResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "66b62f0945bbd8df30b300d3"
+        name:
+          type: string
+          example: "swipe"
+        startTime:
+          type: string
+          format: date-time
+          example: "2024-08-09T16:59:01.004Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2024-08-09T16:59:01.004Z"
+        positions:
+          type: object
+          properties:
+            position0:
+              type: object
+              properties:
+                xCoordinate:
+                  type: integer
+                  example: 2
+                yCoordinate:
+                  type: integer
+                  example: 0
+                zCoordinate:
+                  type: integer
+                  example: 1
+            position1:
+              type: object
+              properties:
+                xCoordinate:
+                  type: integer
+                  example: 3
+                yCoordinate:
+                  type: integer
+                  example: 2
+                zCoordinate:
+                  type: integer
+                  example: 5
+            position2:
+              type: object
+              properties:
+                xCoordinate:
+                  type: integer
+                  example: 4
+                yCoordinate:
+                  type: integer
+                  example: 3
+                zCoordinate:
+                  type: integer
+                  example: 4
+            position3:
+              type: object
+              properties:
+                xCoordinate:
+                  type: integer
+                  example: 5
+                yCoordinate:
+                  type: integer
+                  example: 2
+                zCoordinate:
+                  type: integer
+                  example: 0
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-08-09T15:00:25.053Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-08-09T21:07:47.480Z"
+        __v:
+          type: integer
+          example: 0
+    Analysis:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "swipe"
+        predictions:
+          type: array
+          items:
+            oneOf:
+              - type: object
+                properties:
+                  name:
+                    type: string
+                    example: Rotate Clockwise
+                  value:
+                    type: integer
+                    example: 8
+              - type: object
+                properties:
+                  name:
+                    type: string
+                    example: Wave
+                  value:
+                    type: integer
+                    example: 6
+              - type: object
+                properties:
+                  name:
+                    type: string
+                    example: Point
+                  value:
+                    type: integer
+                    example: 3
+        startTime:
+          type: string
+          format: date-time
+          example: "2024-08-09T16:59:01.004Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2024-08-09T16:59:01.004Z"
+        duration:
+          type: number
+          example: 1.102
+    AnalysisResponse:
+      type: object
+      properties:
+        _id:
+            type: string
+            example: "66b68536fafefb636bda8341"
+        name:
+          type: string
+          example: "swipe"
+        predictions:
+          type: array
+          items:
+            oneOf:
+              - type: object
+                properties:
+                  name:
+                    type: string
+                    example: Rotate Clockwise
+                  value:
+                    type: integer
+                    example: 8
+              - type: object
+                properties:
+                  name:
+                    type: string
+                    example: Wave
+                  value:
+                    type: integer
+                    example: 6
+              - type: object
+                properties:
+                  name:
+                    type: string
+                    example: Point
+                  value:
+                    type: integer
+                    example: 3
+        startTime:
+          type: string
+          format: date-time
+          example: "2024-08-09T16:59:01.004Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2024-08-09T16:59:01.004Z"
+        duration:
+          type: number
+          example: 1.102
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-08-09T21:08:06.032Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-08-09T21:08:06.032Z"
+        __v:
+          type: integer
+          example: 0

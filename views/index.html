@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FileUploadSystem</title>
+</head>
+<body>
+<form id="upload-form" action="/api/gestures" method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" />
+    <input type="submit"/>
+</form>
+<button id="showDataButton">Show data</button>
+<button id="createDataButton">Create new entry</button>
+<div id="elementList">
+
+</div>
+<div id="singleElementContainer">
+
+</div>
+<div id="createContainer">
+
+</div>
+<button id="showAnalysisButton">Show analysis</button>
+<div id="analysisList">
+
+</div>
+<div id="singleAnalysis">
+
+</div>
+<script>
+    document.getElementById("showDataButton").addEventListener("click", showDatabase);
+    document.getElementById("showAnalysisButton").addEventListener("click", showAnalysisDatabase);
+    document.getElementById("createDataButton").addEventListener("click",()=> displayCreateForm("createContainer", "0"));
+
+    const readFileAsText = file => new Promise((resolve, reject) =>{
+        const reader = new FileReader();
+        reader.onload = ({target}) =>{
+            resolve(target.result);
+        };
+        reader.readAsText(file);
+    });
+
+    function addAllPositions(name, id, amountOfPositions, container){
+        let label = document.createElement("label");
+        label.innerHTML = name + ": ";
+        document.getElementById(container).appendChild(label);
+        addLineBreak(container);
+        for (let i = 0; i < amountOfPositions; i++) {
+            addAllCoordinateInputs(i, container);
+        }
+    }
+
+    function displayCreateForm(container, shouldBeCreated, id){
+        const elementContainer = document.getElementById(container);
+        while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
+        addCloseButton("closeCreateForm", container);
+        addLineBreak(container);
+        addNameInput("Name", "createName", container);
+        addLineBreak(container);
+        addTimeInputs("Start Time", "createStartTime", container);
+        addNumberInput("Seconds", "createStartTimeSeconds", "seconds", container);
+        addNumberInput("Milliseconds", "createStartTimeMilliseconds", "milliseconds", container);
+        addLineBreak(container);
+        addTimeInputs("End Time", "createEndTime", container);
+        addNumberInput("Seconds", "createEndTimeSeconds", "seconds", container);
+        addNumberInput("Milliseconds", "createEndTimeMilliseconds", "milliseconds", container);
+        addLineBreak(container);
+        addAllPositions("Positions", "positionInputs", 4, container);
+        if (shouldBeCreated){
+            addSubmitButton("createSubmitButton", "Submit!", container);
+            document.getElementById("createSubmitButton").addEventListener("click", ()=> createEntry(id));
+        }
+        else {
+            addSubmitButton("createSubmitButton", "Update!", container);
+            addSubmitButton("deleteEntryButton", "Delete!", container);
+            addSubmitButton("analyseButton", "Analyse Gesture!", container);
+            displayOneElement(id);
+            document.getElementById("createSubmitButton").addEventListener("click",()=> updateEntry(id));
+            document.getElementById("deleteEntryButton").addEventListener("click", ()=> deleteElement(id, container));
+            document.getElementById("analyseButton").addEventListener("click", ()=>getElement(id));
+        }
+    }
+
+
+    function addSubmitButton(id, value, container){
+        let inputButton = document.createElement("input");
+        inputButton.type = "submit";
+        inputButton.id = id;
+        inputButton.value = value;
+        document.getElementById(container).appendChild(inputButton);
+    }
+
+    function addCloseButton(id, container){
+        let button = document.createElement("button");
+        button.innerHTML = "Close entry form";
+        button.id = id;
+        button.addEventListener("click", ()=>{
+            const elementContainer = document.getElementById(container);
+            while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
+        })
+        document.getElementById(container).appendChild(button);
+    }
+
+    function addLineBreak(id){
+        document.getElementById(id).appendChild(document.createElement("br"));
+    }
+
+
+    function addNameInput(name, id, container){
+        let label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerHTML = name + ": ";
+        let input = document.createElement("input");
+        input.id = id;
+        label.appendChild(input);
+        document.getElementById(container).appendChild(label);
+    }
+
+    function addTimeInputs(name, id, container){
+        let label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerHTML = name + ": ";
+        let input = document.createElement("input");
+        input.id = id;
+        input.type = "datetime-local";
+        label.appendChild(input);
+        document.getElementById(container).appendChild(label);
+    }
+
+
+
+
+
+    function addAllCoordinateInputs(number, container){
+        addNumberInput("x", "xCoordinate" + number, "coordinate", container);
+        addNumberInput("y", "yCoordinate" + number, "coordinate", container);
+        addNumberInput("z", "zCoordinate" + number, "coordinate", container);
+        addLineBreak(container);
+    }
+
+    function addNumberInput(name, id, type, container){
+        let label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerHTML = name + ": ";
+        let input = document.createElement("input");
+        input.id = id;
+        input.type = "number";
+        input.value = 0;
+        switch (type) {
+            case "seconds":{
+                input.min = 0;
+                input.max = 59;
+                break;
+            }
+            case "milliseconds":{
+                input.min = 0;
+                input.max = 999;
+                break;
+            }
+            case "coordinate": break;
+            default: console.log("Invalid input type");
+
+        }
+        label.appendChild(input);
+        document.getElementById(container).appendChild(label);
+    }
+
+    async function showDatabase(){
+        try {
+            const response = await fetch('api/gestures');
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+            const json = await response.json();
+            const elementContainer = document.getElementById("elementList");
+            while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
+            for (const jsonKey in json) {
+                let button = document.createElement("input");
+                button.type = "button";
+                button.id = "DatabaseElement" + jsonKey;
+                button.name = json[jsonKey].name;
+                button.value = json[jsonKey].name;
+                button.addEventListener("click",()=> displayCreateForm("createContainer",false,json[jsonKey]._id));
+                document.getElementById("elementList").appendChild(button);
+            }
+        }
+        catch (error){
+            console.log(error.message);
+        }
+    }
+
+    async function showAnalysisDatabase(){
+        try {
+            const response = await fetch('api/analysis');
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+            const json = await response.json();
+            const elementContainer = document.getElementById("analysisList");
+            while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
+            for (const jsonKey in json) {
+                let button = document.createElement("input");
+                button.type = "button";
+                button.id = "AnalysisElement" + jsonKey;
+                button.name = json[jsonKey].name;
+                button.value = json[jsonKey].name;
+                button.addEventListener("click",()=> showAnalysisDetails("singleAnalysis",json[jsonKey]._id));
+                document.getElementById("analysisList").appendChild(button);
+            }
+        }
+        catch (error){
+            console.log(error.message);
+        }
+    }
+
+    async function showAnalysisDetails(container, id){
+        try {
+            const response = await fetch('api/analysis/' + id);
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+            const json = await response.json();
+            const elementContainer = document.getElementById(container);
+            while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
+            let name = document.createTextNode("Name: " + json.name);
+            let predictions = document.createTextNode("Predictions: " + JSON.stringify(json.predictions, null, 4));
+            let startTime = document.createTextNode("StartTime: " + json.startTime);
+            let endTime = document.createTextNode("EndTime: " + json.endTime);
+            let duration = document.createTextNode("Duration: " + json.duration);
+            document.getElementById(container).appendChild(name);
+            addLineBreak(container);
+            document.getElementById(container).appendChild(predictions);
+            addLineBreak(container);
+            document.getElementById(container).appendChild(startTime);
+            addLineBreak(container);
+            document.getElementById(container).appendChild(endTime);
+            addLineBreak(container);
+            document.getElementById(container).appendChild(duration);
+            addLineBreak(container);
+            addSubmitButton("deleteAnalysisButton", "Delete", container);
+            document.getElementById("deleteAnalysisButton").addEventListener("click", ()=> deleteAnalysis(id, container));
+        }
+        catch (error){
+            console.log(error.message);
+        }
+    }
+
+
+    async function displayOneElement(id){
+        try {
+            const response = await fetch('api/gestures/' + id);
+            if (!response.ok) {
+                throw new Error(`Response status: ${response.status}`);
+            }
+            const json = await response.json();
+            document.getElementById("createName").value = json.name;
+            const start = new Date(json.startTime);
+            const end = new Date(json.endTime);
+            document.getElementById("createStartTime").value = json.startTime.slice(0,-8);
+            document.getElementById("createEndTime").value = json.endTime.slice(0,-8);
+            document.getElementById("createStartTimeSeconds").value = start.getSeconds();
+            document.getElementById("createStartTimeMilliseconds").value = start.getMilliseconds();
+            document.getElementById("createEndTimeSeconds").value = end.getSeconds();
+            document.getElementById("createEndTimeMilliseconds").value = end.getMilliseconds();
+            fillOutCoordinates(json.positions);
+        }
+        catch (error){
+            console.log(error.message);
+        }
+    }
+
+    function fillOutCoordinates(positions){
+        for (let i = 0; i < 4; i++) {
+            document.getElementById("xCoordinate" + i).value = positions["position" + i].xCoordinate;
+            document.getElementById("yCoordinate" + i).value = positions["position" + i].yCoordinate;
+            document.getElementById("zCoordinate" + i).value = positions["position" + i].zCoordinate;
+        }
+    }
+
+
+
+    async function deleteElement(id, container){
+        const request = new Request("/api/gestures/" + id, {
+            method: "DELETE",
+        });
+
+        const response1 = await fetch(request);
+        console.log(response1);
+        await showDatabase();
+        let elementContainer = document.getElementById(container);
+        while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
+    }
+
+    async function deleteAnalysis(id, container){
+        const request = new Request("/api/analysis/" + id, {
+            method: "DELETE",
+        });
+
+        const response1 = await fetch(request);
+        console.log(response1);
+        await showAnalysisDatabase()
+        let elementContainer = document.getElementById(container);
+        while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
+    }
+
+
+    function createPositionEntry(amountOfPositions){
+        let positions = ',"positions": {';
+        for (let i = 0; i < amountOfPositions; i++) {
+            positions += '"position' + i + '": {';
+            positions += addCoordinateEntry(i);
+            positions += "}";
+            if (i < (amountOfPositions - 1)) positions += ",";
+            else positions += '}';
+        }
+        return positions;
+    }
+
+    function addCoordinateEntry(index){
+        let coordinates = `"xCoordinate": ${document.getElementById("xCoordinate" + index).value},`;
+        coordinates += `"yCoordinate": ${document.getElementById("yCoordinate" + index).value},`;
+        coordinates += `"zCoordinate": ${document.getElementById("zCoordinate" + index).value}`;
+        return coordinates;
+    }
+
+    async function createEntry(){
+        const completeStartTime = addSecondsToTime(
+            document.getElementById("createStartTime").value,
+            document.getElementById("createStartTimeSeconds").value,
+            document.getElementById("createStartTimeMilliseconds").value);
+        const completeEndTime = addSecondsToTime(
+            document.getElementById("createEndTime").value,
+            document.getElementById("createEndTimeSeconds").value,
+            document.getElementById("createEndTimeMilliseconds").value);
+        const entry = {
+            name: document.getElementById("createName").value,
+            startTime: completeStartTime,
+            endTime: completeEndTime
+        }
+        let completeEntry = JSON.stringify(entry).slice(0,-1);
+        completeEntry += createPositionEntry(4) + "}";
+        console.log(completeEntry);
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+
+        const request = await fetch('/api/gestures', {
+            headers,
+            method: 'POST',
+            body: completeEntry
+        });
+    }
+
+    async function updateEntry(id){
+        const completeStartTime = addSecondsToTime(
+            document.getElementById("createStartTime").value,
+            document.getElementById("createStartTimeSeconds").value,
+            document.getElementById("createStartTimeMilliseconds").value);
+        const completeEndTime = addSecondsToTime(
+            document.getElementById("createEndTime").value,
+            document.getElementById("createEndTimeSeconds").value,
+            document.getElementById("createEndTimeMilliseconds").value);
+        const entry = {
+            name: document.getElementById("createName").value,
+            startTime: completeStartTime,
+            endTime: completeEndTime
+        }
+        let completeEntry = JSON.stringify(entry).slice(0,-1);
+        completeEntry += createPositionEntry(4) + "}";
+        console.log(completeEntry);
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+
+        const request = await fetch('/api/gestures/' + id, {
+            headers,
+            method: 'PUT',
+            body: completeEntry
+        });
+    }
+
+    function addSecondsToTime(date, seconds, milliseconds){
+        date += ":";
+        if (seconds < 10) date += "0";
+        date += seconds + ".";
+        if (milliseconds < 10) date += "0";
+        if (milliseconds < 100) date += "0";
+        date += milliseconds + "Z";
+        return date;
+    }
+
+    async function getElement(id){
+        const response = await fetch('/api/gestures/' + id);
+        response.json().then(function (result){
+            createAnalysis(result);
+        });
+    }
+
+    async function createAnalysis(data){
+        let predictions = predictGesture(data.positions);
+        let start = new Date(data.startTime);
+        let end = new Date(data.endTime);
+        let duration = (end - start)/3600000;
+        console.log(duration);
+        let analysis = {
+            name: data.name,
+            predictions: predictions,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            duration: (end - start)/1000
+        }
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        console.log(JSON.stringify(analysis));
+        const request = await fetch('/api/analysis/', {
+            headers,
+            method: 'POST',
+            body: JSON.stringify(analysis)
+        });
+    }
+
+    function predictGesture(positions){
+        let gestureName = [];
+        const [x0, x1, x2, x3] = [positions.position0.xCoordinate, positions.position1.xCoordinate, positions.position2.xCoordinate, positions.position3.xCoordinate];
+        const [y0, y1, y2, y3] = [positions.position0.yCoordinate, positions.position1.yCoordinate, positions.position2.yCoordinate, positions.position3.yCoordinate];
+        const [z0, z1, z2, z3] = [positions.position0.zCoordinate, positions.position1.zCoordinate, positions.position2.zCoordinate, positions.position3.zCoordinate];
+        if (y0 < y1 && y1 < y2 && y2 < y3) gestureName.push({name: "Swipe Right", value: y3 - y0});
+        if (y0 > y1 && y1 > y2 && y2 > y3) gestureName.push({name: "Swipe Left", value: y0 - y3});
+        if (z0 < z1 && z1 < z2 && z2 < z3) gestureName.push({name: "Swipe Up", value: z3 - z0});
+        if (z0 > z1 && z1 > z2 && z2 > z3) gestureName.push({name: "Swipe Down", value: z0 - z3});
+        if (x0 < x1 && x1 < x2 && x2 < x3) gestureName.push({name: "Point", value: x3 - x0});
+        const maxValueY = Math.max(y0,y1,y2,y3);
+        const minValueY = Math.min(y0,y1,y2,y3);
+        const maxValueZ = Math.max(z0,z1,z2,z3);
+        const minValueZ = Math.min(z0,z1,z2,z3);
+        if ((y0 < y1 && y2 > y3) || (y0 < y1 && y2 < y3)) gestureName.push({name: "Wave", value: (maxValueY - minValueY)*2});
+        const condition1 = y0 < y2 && y0 === minValueY && y2 === maxValueY;
+        const condition2 = z1 < z3 && z1 === minValueZ && z3 === maxValueZ;
+        const condition3 = z1 > z3 && z1 === maxValueZ && z3 === minValueZ;
+        if (condition1 && condition2) gestureName.push({name: "Rotate Counterclockwise", value: (y2 - y0) + (z3 - z1)});
+        if (condition1 && condition3) gestureName.push({name: "Rotate Clockwise", value: (y2 - y0) + (z1 - z3)});
+        gestureName.sort(function (a,b){return b.value - a.value});
+        return gestureName;
+    }
+
+
+    const sendJSON = async json => {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        const response = await fetch('/api/gestures', {
+            headers,
+            method: 'POST',
+            body: json
+        });
+
+        if (!response.ok) {
+            throw new Error(`Sending file caused an error - ${response.statusText}`);
+        }
+
+        return response.json();
+    };
+
+    const form = document.querySelector('#upload-form');
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+        const file = formData.get('file');
+
+        // No file size means no file.
+        if (file.size === 0) {
+            return; // Do nothing.
+        }
+
+        try {
+            const json = await readFileAsText(file);
+            const response = await sendJSON(json);
+            console.log(response);
+        } catch(error) {
+            console.log(error);
+        }
+    });
+</script>
+</body>
+</html>
