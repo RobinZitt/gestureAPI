@@ -1,24 +1,11 @@
 let chai = require('chai');
 let chaiHttp = require('chai-http');
 const {expect} = require("chai");
-let app = require('../app')
-const {destroy} = require("mocha/mocha");
 
 chai.use(chaiHttp);
 
 describe('Return correct status code', () => {
-    it("getGesture", (done) => {
-        chai.request('http://localhost:3000')
-            .get('/api/gestures/66b4db6277dcea9863dd473e')
-            .end((err, res) =>{
-                expect(err).to.be.null;
-                expect(res).to.have.status(200);
-                expect(res).to.be.json;
-                console.log(res.body._id);
-                done();
-            });
-    });
-
+    let id;
     it("postGesture", (done) => {
         chai.request('http://localhost:3000')
             .post('/api/gestures')
@@ -53,14 +40,43 @@ describe('Return correct status code', () => {
                 expect(err).to.be.null;
                 expect(res).to.have.status(200);
                 expect(res).to.be.json;
-                chai.request('http://localhost:3000')
-                    .delete('/api/gestures/' + res.body._id)
-                    .end((err, res) =>{
-                        expect(err).to.be.null;
-                        expect(res).to.have.status(200);
-                    });
+                id = res.body._id;
                 done();
             });
 
+    });
+
+    it("getGestures", (done) => {
+        chai.request('http://localhost:3000')
+            .get('/api/gestures')
+            .end((err, res) =>{
+                expect(err).to.be.null;
+                expect(res).to.have.status(200);
+                expect(res).to.be.json;
+                done();
+            });
+    });
+
+    it("putGesture", (done) => {
+        chai.request('http://localhost:3000')
+            .put('/api/gestures/' + id)
+            .send ({name: "anotherName"})
+            .end((err, res) =>{
+                expect(err).to.be.null;
+                expect(res).to.have.status(200);
+                expect(res).to.be.json;
+                expect(res.body.name = "anotherName")
+                done();
+            });
+    });
+
+    it("deleteGesture", (done) => {
+        chai.request('http://localhost:3000')
+            .delete('/api/gestures/'  + id)
+            .end((err, res) =>{
+                expect(err).to.be.null;
+                expect(res).to.have.status(200);
+                done();
+            });
     });
 })
