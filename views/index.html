@@ -2,7 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FileUploadSystem</title>
+    <title>GestureAPI</title>
+    <style>
+        #analysisList, #elementList {
+            overflow: scroll;
+            width: 100px;
+            height: 200px;
+        }
+        #createContainer{
+            position: absolute;
+            left: 150px;
+            top: 60px
+        }
+        #singleAnalysis{
+            position: absolute;
+            left: 150px;
+            top: 300px
+        }
+
+        button, input{
+            background-color: lightgrey;
+            border: none;
+            border-radius: 5px;
+        }
+
+    </style>
 </head>
 <body>
 <form id="upload-form" action="/api/gestures" method="POST" enctype="multipart/form-data">
@@ -30,7 +54,7 @@
 <script>
     document.getElementById("showDataButton").addEventListener("click", showDatabase);
     document.getElementById("showAnalysisButton").addEventListener("click", showAnalysisDatabase);
-    document.getElementById("createDataButton").addEventListener("click",()=> displayCreateForm("createContainer", "0"));
+    document.getElementById("createDataButton").addEventListener("click",()=> displayCreateForm("createContainer", true,"0"));
 
     const readFileAsText = file => new Promise((resolve, reject) =>{
         const reader = new FileReader();
@@ -40,15 +64,45 @@
         reader.readAsText(file);
     });
 
-    function addAllPositions(name, id, amountOfPositions, container){
-        let label = document.createElement("label");
-        label.innerHTML = name + ": ";
-        document.getElementById(container).appendChild(label);
-        addLineBreak(container);
-        for (let i = 0; i < amountOfPositions; i++) {
-            addAllCoordinateInputs(i, container);
+    const sendJSON = async json => {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+
+        const response = await fetch('/api/gestures', {
+            headers,
+            method: 'POST',
+            body: json
+        });
+
+        if (!response.ok) {
+            throw new Error(`Sending file caused an error - ${response.statusText}`);
         }
-    }
+
+        return response.json();
+    };
+
+    const form = document.querySelector('#upload-form');
+
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+        const file = formData.get('file');
+
+        // No file size means no file.
+        if (file.size === 0) {
+            return; // Do nothing.
+        }
+
+        try {
+            const json = await readFileAsText(file);
+            const response = await sendJSON(json);
+            console.log(response);
+        } catch(error) {
+            console.log(error);
+        }
+    });
 
     function displayCreateForm(container, shouldBeCreated, id){
         const elementContainer = document.getElementById(container);
@@ -78,6 +132,16 @@
             document.getElementById("createSubmitButton").addEventListener("click",()=> updateEntry(id));
             document.getElementById("deleteEntryButton").addEventListener("click", ()=> deleteElement(id, container));
             document.getElementById("analyseButton").addEventListener("click", ()=>getElement(id));
+        }
+    }
+
+    function addAllPositions(name, id, amountOfPositions, container){
+        let label = document.createElement("label");
+        label.innerHTML = name + ": ";
+        document.getElementById(container).appendChild(label);
+        addLineBreak(container);
+        for (let i = 0; i < amountOfPositions; i++) {
+            addAllCoordinateInputs(i, container);
         }
     }
 
@@ -168,9 +232,6 @@
     async function showDatabase(){
         try {
             const response = await fetch('api/gestures');
-            if (!response.ok) {
-                throw new Error(`Response status: ${response.status}`);
-            }
             const json = await response.json();
             const elementContainer = document.getElementById("elementList");
             while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
@@ -192,9 +253,6 @@
     async function showAnalysisDatabase(){
         try {
             const response = await fetch('api/analysis');
-            if (!response.ok) {
-                throw new Error(`Response status: ${response.status}`);
-            }
             const json = await response.json();
             const elementContainer = document.getElementById("analysisList");
             while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
@@ -216,9 +274,6 @@
     async function showAnalysisDetails(container, id){
         try {
             const response = await fetch('api/analysis/' + id);
-            if (!response.ok) {
-                throw new Error(`Response status: ${response.status}`);
-            }
             const json = await response.json();
             const elementContainer = document.getElementById(container);
             while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
@@ -249,9 +304,6 @@
     async function displayOneElement(id){
         try {
             const response = await fetch('api/gestures/' + id);
-            if (!response.ok) {
-                throw new Error(`Response status: ${response.status}`);
-            }
             const json = await response.json();
             document.getElementById("createName").value = json.name;
             const start = new Date(json.startTime);
@@ -284,8 +336,7 @@
             method: "DELETE",
         });
 
-        const response1 = await fetch(request);
-        console.log(response1);
+        const response = await fetch(request);
         await showDatabase();
         let elementContainer = document.getElementById(container);
         while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
@@ -296,8 +347,7 @@
             method: "DELETE",
         });
 
-        const response1 = await fetch(request);
-        console.log(response1);
+        const response = await fetch(request);
         await showAnalysisDatabase()
         let elementContainer = document.getElementById(container);
         while (elementContainer.firstChild) elementContainer.removeChild(elementContainer.lastChild);
@@ -345,7 +395,7 @@
         };
 
 
-        const request = await fetch('/api/gestures', {
+        const response = await fetch('/api/gestures', {
             headers,
             method: 'POST',
             body: completeEntry
@@ -374,21 +424,11 @@
         };
 
 
-        const request = await fetch('/api/gestures/' + id, {
+        const response = await fetch('/api/gestures/' + id, {
             headers,
             method: 'PUT',
             body: completeEntry
         });
-    }
-
-    function addSecondsToTime(date, seconds, milliseconds){
-        date += ":";
-        if (seconds < 10) date += "0";
-        date += seconds + ".";
-        if (milliseconds < 10) date += "0";
-        if (milliseconds < 100) date += "0";
-        date += milliseconds + "Z";
-        return date;
     }
 
     async function getElement(id){
@@ -415,11 +455,21 @@
             'Content-Type': 'application/json'
         };
         console.log(JSON.stringify(analysis));
-        const request = await fetch('/api/analysis/', {
+        const response = await fetch('/api/analysis/', {
             headers,
             method: 'POST',
             body: JSON.stringify(analysis)
         });
+    }
+
+    function addSecondsToTime(date, seconds, milliseconds){
+        date += ":";
+        if (seconds < 10) date += "0";
+        date += seconds + ".";
+        if (milliseconds < 10) date += "0";
+        if (milliseconds < 100) date += "0";
+        date += milliseconds + "Z";
+        return date;
     }
 
     function predictGesture(positions){
@@ -446,46 +496,6 @@
         return gestureName;
     }
 
-
-    const sendJSON = async json => {
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-
-        const response = await fetch('/api/gestures', {
-            headers,
-            method: 'POST',
-            body: json
-        });
-
-        if (!response.ok) {
-            throw new Error(`Sending file caused an error - ${response.statusText}`);
-        }
-
-        return response.json();
-    };
-
-    const form = document.querySelector('#upload-form');
-
-    form.addEventListener('submit', async event => {
-        event.preventDefault();
-
-        const formData = new FormData(event.target);
-        const file = formData.get('file');
-
-        // No file size means no file.
-        if (file.size === 0) {
-            return; // Do nothing.
-        }
-
-        try {
-            const json = await readFileAsText(file);
-            const response = await sendJSON(json);
-            console.log(response);
-        } catch(error) {
-            console.log(error);
-        }
-    });
 </script>
 </body>
 </html>

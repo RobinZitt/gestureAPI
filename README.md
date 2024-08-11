@@ -28,4 +28,7 @@ To view the analysed data press the "Show Analysis" button.
 
 <h2>Tests</h2>
 To execute the unit tests run the test suits inside <a href="https://github.com/RobinZitt/gestureAPI/blob/master/tests/tests.js">tests.js</a>.
-To make sure that the test work correctly only run the test suits on not the single tests.
+To make sure that the test work correctly only run the test suits and not the single tests on their own.
+
+<h2>API Endpoint Documentation</h2>
+Examples of possible requests and responses for the API view <a href="https://github.com/RobinZitt/gestureAPI/blob/master/gestureAPISpecification.yaml">gestureAPISpecification.yaml</a>

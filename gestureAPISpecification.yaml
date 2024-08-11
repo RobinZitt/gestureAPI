@@ -106,6 +106,8 @@ paths:
                 $ref: '#/components/schemas/GestureResponse'          
         '500':
           description: Invalid input
+        '400':
+          description: Bad Request
     get:
       tags:
         - gesture
@@ -187,6 +189,8 @@ paths:
                 $ref: '#/components/schemas/AnalysisResponse'          
         '500':
           description: Invalid input
+        '400':
+          description: Bad Request
     get:
       tags:
         - analysis
