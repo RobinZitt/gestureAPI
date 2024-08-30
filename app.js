@@ -42,7 +42,7 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-mongoose.connect("mongodb+srv://robinzitt:e2fc9ffSrwEf5r4f@backenddb.sq5gv5h.mongodb.net/Node-API?retryWrites=true&w=majority&appName=BackendDB")
+mongoose.connect("mongodb+srv://user:password@backenddb.sq5gv5h.mongodb.net/Node-API?retryWrites=true&w=majority&appName=BackendDB")
     .then(()=> {
       console.log("Connected to database!");
     })
